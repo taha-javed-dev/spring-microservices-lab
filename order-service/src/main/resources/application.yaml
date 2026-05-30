@@ -2,10 +2,11 @@ spring:
   application:
     name: order-service
 
+#DB config
   datasource:
-    url: jdbc:postgresql://localhost:5432/orderDB
-    username: postgres
-    password: password
+    url: jdbc:postgresql://localhost:5432/inventoryDB
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
 
   jpa:
     hibernate:
@@ -15,6 +16,7 @@ spring:
       hibernate:
         format_sql: true
 
+#SQL file config
     defer-datasource-initialization: true
   sql:
     init:
@@ -22,8 +24,14 @@ spring:
       data-locations: classpath:data.sql
 
 
-
+#server config
 server:
   servlet:
-    context-path: /api/v1
+    context-path: /orders
   port: 9020
+
+#eureka config
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
