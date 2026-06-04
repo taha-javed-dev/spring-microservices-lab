@@ -21,6 +21,7 @@ spring:
             - Path=/api/v1/inventory/**
           filters:
             - StripPrefix=2
+            #- RedirectTo=302, http://google.com
             #- AddRequestHeader=X-Custom-Header, Taha  (add custom header)
 
 #eureka config
