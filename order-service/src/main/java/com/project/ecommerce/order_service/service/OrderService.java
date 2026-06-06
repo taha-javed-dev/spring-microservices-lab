@@ -2,10 +2,13 @@ package com.project.ecommerce.order_service.service;
 
 import com.project.ecommerce.order_service.client.InventoryOpenFeignClient;
 import com.project.ecommerce.order_service.dto.OrderRequestDto;
+import com.project.ecommerce.order_service.dto.RestockItemRequest;
 import com.project.ecommerce.order_service.entity.OrderItem;
 import com.project.ecommerce.order_service.entity.OrderStatus;
 import com.project.ecommerce.order_service.entity.Orders;
 import com.project.ecommerce.order_service.repository.OrdersRepository;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -39,8 +42,10 @@ public class OrderService {
         return modelMapper.map(order, OrderRequestDto.class);
     }
 
-//    @Transactional
+    @Retry(name = "inventoryRetry", fallbackMethod = "createOrderFallback")
+    @RateLimiter(name = "inventoryRateLimiter", fallbackMethod = "createOrderFallback")
     public OrderRequestDto createOrder(OrderRequestDto orderRequestDto) {
+        log.info("Calling the createOrder method");
         Double totalPrice = inventoryOpenFeignClient.reduceStocks(orderRequestDto);
 
         Orders orders = modelMapper.map(orderRequestDto, Orders.class);
@@ -53,5 +58,27 @@ public class OrderService {
         Orders savedOrder = ordersRepository.save(orders);
 
         return modelMapper.map(savedOrder, OrderRequestDto.class);
+    }
+
+    public OrderRequestDto createOrderFallback(OrderRequestDto orderRequestDto, Throwable throwable) {
+        log.error("Fallback occurred due to : {}", throwable.getMessage());
+        return new OrderRequestDto();
+    }
+
+    public void cancelOrder(Long id) {
+        Orders orders = ordersRepository.findById(id).orElseThrow(() -> new RuntimeException("Order does not exists"));
+        if (orders.getOrderStatus() == OrderStatus.CANCELLED || orders.getOrderStatus() == OrderStatus.DELIVERED) {
+            throw new RuntimeException("Order is already cancelled");
+        }
+
+        List<OrderItem> items = orders.getItems();
+        List<RestockItemRequest> restockItemRequests = items.stream()
+                .map((item) -> new RestockItemRequest(
+                        item.getProductId(),
+                        item.getQuantity()))
+                        .toList();
+        inventoryOpenFeignClient.restoreStock(restockItemRequests);
+        orders.setOrderStatus(OrderStatus.CANCELLED);
+        ordersRepository.save(orders);
     }
 }

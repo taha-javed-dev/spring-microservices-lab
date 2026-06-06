@@ -4,7 +4,7 @@ spring:
 
 #DB config
   datasource:
-    url: jdbc:postgresql://localhost:5432/inventoryDB
+    url: jdbc:postgresql://localhost:5432/orderDB
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
 
@@ -16,12 +16,12 @@ spring:
       hibernate:
         format_sql: true
 
-#SQL file config
-    defer-datasource-initialization: true
-  sql:
-    init:
-      mode: always
-      data-locations: classpath:data.sql
+##SQL file config
+#    defer-datasource-initialization: true
+#  sql:
+#    init:
+#      mode: always
+#      data-locations: classpath:data.sql
 
 
 #server config
@@ -35,3 +35,18 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+
+#resiliance4j
+resilience4j:
+  retry:
+    instances:
+      inventoryRetry:
+        maxRetryAttempts: 3
+        waitDuration: 5s
+
+  ratelimiter:
+    instances:
+      inventoryRateLimiter:
+        limitRefreshPeriod: 5s
+        limitForPeriod: 1
+        timeoutDuration: 1s

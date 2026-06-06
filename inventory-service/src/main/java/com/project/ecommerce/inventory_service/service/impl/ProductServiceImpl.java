@@ -4,6 +4,7 @@ package com.project.ecommerce.inventory_service.service.impl;
 import com.project.ecommerce.inventory_service.dto.OrderRequestDto;
 import com.project.ecommerce.inventory_service.dto.OrderRequestItemDto;
 import com.project.ecommerce.inventory_service.dto.ProductDto;
+import com.project.ecommerce.inventory_service.dto.RestockItemRequest;
 import com.project.ecommerce.inventory_service.entity.Product;
 import com.project.ecommerce.inventory_service.repository.ProductRepository;
 import com.project.ecommerce.inventory_service.service.ProductService;
@@ -66,5 +67,17 @@ public class ProductServiceImpl implements ProductService {
             totalPrice += quantity * product.getPrice();
         }
         return totalPrice;
+    }
+
+    @Override
+    public void restoreStock(List<RestockItemRequest> restockItemRequests) {
+
+        for (RestockItemRequest item: restockItemRequests) {
+            Long productId = item.getProductId();
+            Integer productQuantity = item.getQuantity();
+            Product product = productRepository.findById(productId).orElseThrow(() -> new RuntimeException("Product does not exists"));
+            product.setStock(product.getStock() + productQuantity);
+            productRepository.save(product);
+        }
     }
 }

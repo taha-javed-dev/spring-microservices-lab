@@ -3,6 +3,7 @@ package com.project.ecommerce.inventory_service.controller;
 import com.project.ecommerce.inventory_service.clients.OrdersOpenFeignClient;
 import com.project.ecommerce.inventory_service.dto.OrderRequestDto;
 import com.project.ecommerce.inventory_service.dto.ProductDto;
+import com.project.ecommerce.inventory_service.dto.RestockItemRequest;
 import com.project.ecommerce.inventory_service.service.ProductService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +26,7 @@ public class ProductController {
 
     private final OrdersOpenFeignClient ordersFeignClient;
 
-    @GetMapping("fetchOrders")
+    @GetMapping("/fetchOrders")
     public String fetchFromOrdersService(HttpServletRequest httpServletRequest) {
 
 //        ServiceInstance orderService = discoveryClient.getInstances("order-service").getFirst();
@@ -44,16 +45,24 @@ public class ProductController {
         return ResponseEntity.ok(inventories);
     }
 
-    @GetMapping("{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<ProductDto> getInventoryById(@PathVariable Long id){
         ProductDto inventory = productService.getProductById(id);
         return ResponseEntity.ok(inventory);
     }
 
-    @PutMapping("reduce-stocks")
+    @PutMapping("/reduce-stocks")
     public ResponseEntity<Double> reduceStock(@RequestBody OrderRequestDto orderRequestDto) {
         Double totalPrice = productService.reduceStock(orderRequestDto);
         return ResponseEntity.ok(totalPrice);
     }
+
+    @PutMapping("/restore-stocks")
+    public ResponseEntity<Void> restoreStock(@RequestBody List<RestockItemRequest> restockItemRequests) {
+        productService.restoreStock(restockItemRequests);
+        return ResponseEntity.noContent().build();
+    }
+
+
 
 }

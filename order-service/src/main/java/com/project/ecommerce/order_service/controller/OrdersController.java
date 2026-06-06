@@ -31,6 +31,12 @@ public class OrdersController {
         return ResponseEntity.ok(orderRequestDto1);
     }
 
+    @PostMapping("/cancel-order/{id}")
+    public ResponseEntity<Void> cancelOrder(@PathVariable  Long id) {
+        orderService.cancelOrder(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping
     public ResponseEntity<List<OrderRequestDto>> getAllOrders(HttpServletRequest httpServletRequest) {
         log.info("Fetching all orders via controller");
